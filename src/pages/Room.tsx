@@ -10,7 +10,7 @@ import type { Vote, VotingSummary, Task } from '../types';
 export default function Room() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useStore();
+  const { user, setUser } = useStore();
   const [room, setRoom] = useState<any>(null);
   const [participants, setParticipants] = useState<any[]>([]);
   const [votes, setVotes] = useState<Vote[]>([]);
@@ -20,8 +20,28 @@ export default function Room() {
   const [newTask, setNewTask] = useState({ title: '', description: '' });
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [isAddingTask, setIsAddingTask] = useState(false);
+  const [isCheckingUser, setIsCheckingUser] = useState(true);
+
 
   useEffect(() => {
+    if (!user && id) {
+      const storedUser = localStorage.getItem(`room_${id}_participant`);
+      if (storedUser) {
+        try {
+          const parsed = JSON.parse(storedUser);
+          setUser(parsed);
+        } catch (e) {
+          localStorage.removeItem(`room_${id}_participant`);
+        }
+      }
+    }
+  
+    setIsCheckingUser(false);
+  }, [id, user, setUser]);
+
+  useEffect(() => {
+    if (isCheckingUser) return;
+
     if (!id || !user) {
       navigate('/');
       return;
@@ -64,7 +84,7 @@ export default function Room() {
     return () => {
       roomSubscription.unsubscribe();
     };
-  }, [id, user, navigate]);
+  }, [id, user, isCheckingUser, navigate]);
 
   useEffect(() => {
     if (!room?.voting_task_id) {

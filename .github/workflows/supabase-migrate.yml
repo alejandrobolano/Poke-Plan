@@ -1,4 +1,4 @@
-name: Supabase Migrations
+name: Supabase Migrations #1
 
 on:
   push:

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Pizza, Users, Fish } from 'lucide-react';
+import { Users, Fish } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 import toast from 'react-hot-toast';
@@ -31,27 +31,21 @@ export default function Welcome() {
   const { user, setUser } = useStore();
 
   useEffect(() => {
-    // Check if there's a room code in the URL path
     const pathParts = location.pathname.split('/');
     const roomIdFromPath = pathParts[1];
     
     if (roomIdFromPath && roomIdFromPath !== 'room') {
       setRoomCode(roomIdFromPath);
       setIsJoining(true);
-      
-      // Check if user is already in the room
       checkExistingParticipant(roomIdFromPath);
     }
   }, [location.pathname]);
 
   const checkExistingParticipant = async (roomId: string) => {
     try {
-      // Check if we have a stored participant ID
       const storedParticipant = localStorage.getItem(`room_${roomId}_participant`);
       if (storedParticipant) {
         const participantData = JSON.parse(storedParticipant);
-        
-        // Verify if the participant still exists in the room
         const { data: participant } = await supabase
           .from('participants')
           .select('*')
@@ -69,12 +63,10 @@ export default function Welcome() {
           navigate(`/room/${roomId}`);
           return;
         } else {
-          // Clear invalid stored data
           localStorage.removeItem(`room_${roomId}_participant`);
         }
       }
 
-      // Verify if the room exists
       const { data: room } = await supabase
         .from('rooms')
         .select()
@@ -204,7 +196,8 @@ export default function Welcome() {
             <Fish className="h-16 w-16 text-yellow-500" />
           </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-2">PokePlan 🍣</h1>
-          <p className="text-gray-600">Collaborative Planning Poker for Agile Teams by Alejandro Bolaño</p>
+          <p className="text-gray-600">Collaborative Planning Poker for Agile Teams by Alejandro Bolaño. 
+            This is a emojically <a href='https://github.com/alejandrobolano/Poke-Plan?tab=readme-ov-file#readme' target='_blank'>readme.md</a></p>
         </div>
 
         <div className="space-y-4">

@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, RefreshCw, Share2, Users, Plus, Edit2, Trash2, Check } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import { Eye, RefreshCw, Share2, Users, Plus, Edit2, Trash2, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 import toast from 'react-hot-toast';
@@ -47,20 +46,11 @@ export default function Room() {
       return;
     }
 
-    // Set up real-time subscriptions
     const roomSubscription = supabase
       .channel(`room:${id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms', filter: `id=eq.${id}` }, (payload) => {
         if (payload.new) {
           setRoom(payload.new);
-          if (payload.new.revealed && !payload.old?.revealed) {
-            // Only trigger confetti when revealed changes from false to true
-            confetti({
-              particleCount: 1000,
-              spread: 70,
-              origin: { y: 0.6 }
-            });
-          }
           if (payload.new.revealed) {
             calculateSummary(votes);
           } else {
@@ -76,7 +66,6 @@ export default function Room() {
       })
       .subscribe();
 
-    // Initial data fetch
     fetchRoom();
     fetchParticipants();
     fetchTasks();
@@ -94,7 +83,6 @@ export default function Room() {
       return;
     }
 
-    // Set up votes subscription
     const votesSubscription = supabase
       .channel(`votes:${room.voting_task_id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'votes', filter: `task_id=eq.${room.voting_task_id}` }, () => {
@@ -148,7 +136,6 @@ export default function Room() {
 
     setVotes(data || []);
 
-    // Update selected value for current user
     const userVote = data?.find(vote => vote.user_id === user?.id);
     setSelectedValue(userVote?.value || null);
 
@@ -167,7 +154,6 @@ export default function Room() {
   };
 
   const calculateSummary = (votes: Vote[]) => {
-    // Get the latest vote for each user
     const latestVotes = new Map<string, Vote>();
     votes.forEach(vote => {
       latestVotes.set(vote.user_id, vote);
@@ -228,17 +214,19 @@ export default function Room() {
     if (!room) return;
 
     await supabase
-      .from('rooms')
-      .update({ revealed: false, voting_task_id: null })
-      .eq('id', room.id);
-
-    await supabase
       .from('votes')
       .delete()
       .eq('room_id', room.id);
 
+    await supabase
+      .from('rooms')
+      .update({ revealed: false, voting_task_id: null })
+      .eq('id', room.id);
+
+
     setSelectedValue(null);
-    setSummary(null);
+    setSummary(null);    
+    setVotes([]);
   };
 
   const shareRoom = () => {

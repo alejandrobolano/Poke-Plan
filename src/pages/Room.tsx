@@ -241,6 +241,40 @@ export default function Room() {
     setSummary(null);
   };
 
+  const resetVoting = async () => {
+    if (!room) return;
+
+    // First delete all votes for the current task
+    await supabase
+      .from('votes')
+      .delete()
+      .eq('task_id', room.voting_task_id);
+
+    // Then reset the room state
+    await supabase
+      .from('rooms')
+      .update({ revealed: false, voting_task_id: null })
+      .eq('id', room.id);
+
+    setSelectedValue(null);
+    setSummary(null);
+    setVotes([]);
+
+    // Remove votes for this task from storage
+    if (room.voting_task_id) {
+      setTaskVotes(prev => {
+        const newVotes = { ...prev };
+        delete newVotes[room.voting_task_id];
+        return newVotes;
+      });
+      setTaskSummaries(prev => {
+        const newSummaries = { ...prev };
+        delete newSummaries[room.voting_task_id];
+        return newSummaries;
+      });
+    }
+  };
+
   const shareRoom = () => {
     const url = window.location.origin + '/' + id;
     navigator.clipboard.writeText(url);
